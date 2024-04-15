@@ -2,6 +2,7 @@
 
 Its a shiny app to do some quick visualization about where your primers or amplicons are in the 16S gene.
 
+![An absolutly stunning screenshot](screenshot.png)
 
 ## Installation
 ```
