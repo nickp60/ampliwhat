@@ -1,4 +1,4 @@
-library(magrittr)
+library(dplyr)
 library(shiny)
 library(DECIPHER)
 # DECIPHER::BrowseSeqs , but returns the HTML
@@ -392,22 +392,22 @@ V5	7045	9533	747	885
 V6	9534	10454	886	1029
 V7	10455	12258	1030	1180
 V8	12259	13597	1181	1372
-V9	13598	14371	1373	1468", sep="\t") %>% dplyr::rowwise() %>% dplyr::mutate(seq=substr(start = start, stop = end, coli))
-  primers_raw <- read.csv("Abellan-Schneyder-2021-primers.tsv", sep="\t", col.names=c("Region", "Forward", "Reverse","Fseq", "Rseq", "Specificity", "Temp", "Ref"), header = FALSE)  %>% 
+V9	13598	14371	1373	1468", sep="\t") |> dplyr::rowwise() |> dplyr::mutate(seq=substr(start = start, stop = end, coli))
+  primers_raw <- read.csv("Abellan-Schneyder-2021-primers.tsv", sep="\t", col.names=c("Region", "Forward", "Reverse","Fseq", "Rseq", "Specificity", "Temp", "Ref"), header = FALSE)  |> 
     dplyr::mutate(Fseq=gsub(" *", "", Fseq),
                   Rseq=gsub(" *", "", Rseq))
                   
-  primers_r <- primers_raw %>% dplyr::select(Region, Reverse, Rseq) %>% dplyr::rename(Forward=Reverse) 
+  primers_r <- primers_raw |> dplyr::select(Region, Reverse, Rseq) |> dplyr::rename(Forward=Reverse) 
   primers_r$Fseq <- as.character(Biostrings::reverseComplement(DNAStringSet(primers_r$Rseq)))
   primers <- dplyr::bind_rows(
     primers_raw, 
     primers_r
-    ) %>% 
-    dplyr::rename("Name"="Forward", "Seq"="Fseq") %>% 
-    dplyr::select(Region, Name, Seq) %>% 
+    ) |> 
+    dplyr::rename("Name"="Forward", "Seq"="Fseq") |> 
+    dplyr::select(Region, Name, Seq) |> 
     dplyr::mutate(Seq=gsub(" *", "", Seq),
-                  Name=paste(ifelse(grepl("F$", Name), gsub("(.+?)-(.*)", "\\1", Region), gsub("(.+?)-(.+)", "\\2", Region)), Name)) %>% 
-    dplyr::select(Name, Seq) %>% 
+                  Name=paste(ifelse(grepl("F$", Name), gsub("(.+?)-(.*)", "\\1", Region), gsub("(.+?)-(.+)", "\\2", Region)), Name)) |> 
+    dplyr::select(Name, Seq) |> 
     dplyr::distinct()
   # get rc of rev primers
   primerseqs<- c( coli,regions$seq, primers$Seq)
