@@ -435,40 +435,10 @@ ui <- bootstrapPage(
   # verbatimTextOutput('reg'),
   shiny::uiOutput('aln')
 )
-#source("custom.R")
-nucs <-read.csv(text=gsub(" +", "\t", 
-"    A   T   G   C   S   W   R   Y   K   M   B   V   H   D   N
-A   1   0    0   0   0   1   1   0   0   1   0   1   1   1   0
-T   0   1    0   0   0   1   0   1   1   0   1   0   1   1   0
-G   0   0    1   0   1   0   1   0   1   0   1   1   0   1   0
-C   0   0    0   1   1   0   0    1   0   1   1   1   1   0   0
-S   0   0    0    0   1   0   0   0   0   0   0   0   0   0   0
-W    0    0   0   0   0   1   0   0   0   0   0   0   0   0   0
-R    0   0    0   0   0   0   1   0   0   0   0   0   0   0   0
-Y    0   0   0    0   0   0   0   1   0   0   0   0   0   0   0
-K    0   0   0   0   0   0   0   0   1   0   0   0   0   0   0
-M    0   0   0   0   0   0   0   0   0   1   0   0   0   0   0
-B    0   0   0   0   0   0   0   0   0   0   1   0   0   0   0
-V    0   0   0   0   0   0   0   0   0   0   0   1   0   0   0
-H    0   0   0   0   0   0   0   0   0   0   0   0   1   0   0  
-D    0   0   0   0   0   0   0   0   0   0   0   0   0   1   0
-N    0   0   0   0   0   0   0   0   0   0   0   0   0   0   0"), sep="\t")
 
 
 
-rownames(nucs) <- nucs$X
-nucs$X <- NULL
-# prevents this issue https://stackoverflow.com/questions/33891783/
-nucs[] <- lapply(nucs, as.numeric)
-nucs  <- as.matrix(nucs)
-# make it symetric, only defined upper tri above
-nucs[lower.tri(nucs)] <- t(nucs)[lower.tri(nucs)]
 
-alt_nucs = data.frame(nuc=colnames(nucs), aa= AA_ALPHABET[1:ncol(nucs)])
-
-
-nucs <- nucs * 11
-diag(nucs) <- 11
 # Define the server code
 server <- function(input, output) {
   alignment <- reactive({
@@ -476,17 +446,16 @@ server <- function(input, output) {
     print(input$refs)
     allseqs <- xscat(c(primerseqs[input$refs], newseqs))
     names(allseqs) <- c(names(primerseqs[input$refs]), "Primer1", "Primer2")    
-    tmpaln <- DECIPHER::AlignSeqs(
-      allseqs,
-      #      gapOpening = c(-18, -14),
-      #gapOpening = c(-28, -24),
-      #misMatch=4
-      substitutionMatrix=as.matrix(nucs) 
+    pairs = data.frame(Pattern=1, Subject=seq_along(allseqs))
+    tmpaln <- DECIPHER::AlignPairs(
+      gapOpening = -5,gapExtension = -10,
+      allseqs, allseqs, pairs=pairs, perfectMatch = 1, misMatch = -3, type="both"
     )
-    names(tmpaln) <- c(names(primerseqs[input$refs]), 
-                        paste("Primer1", ScoreAlignment(tmpaln[c(1,which(names(tmpaln) == "Primer1"))],  substitutionMatrix=as.matrix(nucs) *1)), 
-                        paste("Primer2", ScoreAlignment(tmpaln[c(1,which(names(tmpaln) == "Primer2"))],  substitutionMatrix=as.matrix(nucs) *1)))
-    tmpaln
+    # names(tmpaln[[3]])
+    # names(tmpaln) <- c(names(primerseqs[input$refs]), 
+    #                     paste("Primer1", ScoreAlignment(tmpaln[c(1,which(names(tmpaln) == "Primer1"))],  substitutionMatrix=as.matrix(nucs) *1)), 
+    #                     paste("Primer2", ScoreAlignment(tmpaln[c(1,which(names(tmpaln) == "Primer2"))],  substitutionMatrix=as.matrix(nucs) *1)))
+    tmpaln[[3]]
   })
   thisalphabet<- alphabet(primerseqs, baseOnly = TRUE)
 output$aln <- renderUI(HTML(paste(
